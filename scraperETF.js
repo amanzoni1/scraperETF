@@ -109,11 +109,11 @@ async function processMessage(data) {
           return;
         } else {
           const quantity = size / latestPrice; 
-          //await createOrder("BUY", symbol, quantity);
+          await createOrder("BUY", symbol, quantity);
           console.log(sender + ': ' + textToInterpret);
           const message = `BTC SPOT ETF has been approved and an order created for ${quantity} BTC!`;
           console.log(symbol, quantity, latestPrice);
-          sendNotification(pOUser, pOToken, message, 0);
+          sendNotification(pOUser, pOToken, message, 1);
           console.log(message);
         }
       } else if (message.title.startsWith("ETF: Possible Bitcoin ETF Rejection:")) {
@@ -131,24 +131,22 @@ async function processMessage(data) {
           return;
         } else {
           const quantity = size / latestPrice; 
-          //await createOrder("SELL", symbol, quantity);
+          await createOrder("SELL", symbol, quantity);
           console.log(sender + ': ' + textToInterpret);
           const message = `BTC SPOT ETF has been rejected and an order created for ${quantity} BTC!`;
           console.log(symbol, quantity, latestPrice);
-          sendNotification(pOUser, pOToken, message, 0);
+          sendNotification(pOUser, pOToken, message, 1);
           console.log(message);
         }
       } else if (message.title.startsWith("ETF: Possible Bitcoin ETF Delay:")) {
         console.log(sender + ': ' + textToInterpret);
-        console.log("BTC SPOT ETF has been delayed");
+        const message = "BTC SPOT ETF has been delayed";
+        sendNotification(pOUser, pOToken, message);
+        console.log(message);
       } else {
         console.log(sender + ': ' + textToInterpret);
         return;
       }
-      
-       //console.log(responseObj);
-      //console.log(`Time processing: ${(dateF - received) / 1000} seconds`);
-      //console.log('-------------');
     } else {
       //console.log('message ignored.'); 
       return; 
@@ -159,11 +157,7 @@ async function processMessage(data) {
 }
 
 
-/*
-const rawT = `{"title":"ETF: Possible Bitcoin ETF Delay: sfjkgrjkgbnrjbg","source":"Scrapers","url":"https://www.sec.gov/rules/sro/national-securities-exchanges?aId=&sro_organization=All&title=&release_number=&file_number=&year=All&v=1700757750673","time":1700757750716,"symbols":[],"en":"Testing New 'Scrapers' Source ","_id":"1700757750716TNSS","suggestions":[]}`
 
-setTimeout(() => {processMessage(rawT)}, 5000) 
-*/
 
 
 
