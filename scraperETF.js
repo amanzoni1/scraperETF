@@ -19,7 +19,7 @@ const pOToken = process.env.PUSH_TOKEN;
 
 const symbol = 'BTCUSDT';
 const size = 500000;
-const fallbackPrice = 37000;
+const fallbackPrice = 44000;
 let myOpenPositions = {};
 let priceObj = {};
 let infoObj = {};
@@ -61,7 +61,7 @@ async function reciveNews() {
   ws = new WebSocket('wss://news.treeofalpha.com/ws');
 
   ws.on('open', () => {
-    console.log('Connection with MadNews opened');
+    console.log('Connection with TreeNews opened');
     ws.send('login 842752f3f9b8271110aa50829407762f536b8a34e43661db7f3e3ff4cb8ca772');
     reconnectionAttempts = 0;
   });
@@ -79,11 +79,9 @@ async function reciveNews() {
 
   ws.on('error', (e) => {
     console.log('WebSocket connection error: ' + e);
-    isConnected = false;
-    ws = null;
-    attemptReconnect();
   });
 }
+
 
 function attemptReconnect() {
   if (reconnectionAttempts < 10) {
@@ -168,12 +166,6 @@ async function processMessage(data) {
 }
 
 
-/*
-const rawT = `{"title":"ETF: Possible Bitcoin ETF Delay: sfjkgrjkgbnrjbg","source":"Scrapers","url":"https://www.sec.gov/rules/sro/national-securities-exchanges?aId=&sro_organization=All&title=&release_number=&file_number=&year=All&v=1700757750673","time":1700757750716,"symbols":[],"en":"Testing New 'Scrapers' Source ","_id":"1700757750716TNSS","suggestions":[]}`
-
-setTimeout(() => {processMessage(rawT)}, 5000);
-setTimeout(() => {processMessage(rawT)}, 5050)  
-*/
 
 
 
