@@ -84,7 +84,7 @@ async function reciveNews() {
 
 
 function attemptReconnect() {
-  if (reconnectionAttempts < 10) {
+  if (reconnectionAttempts < 20) {
     setTimeout(() => {
       reciveNews();
       reconnectionAttempts++;
@@ -166,6 +166,12 @@ async function processMessage(data) {
 }
 
 
+/*
+const rawT = `{"title":"ETF: Possible Bitcoin ETF Delay: sfjkgrjkgbnrjbg","source":"Scrapers","url":"https://www.sec.gov/rules/sro/national-securities-exchanges?aId=&sro_organization=All&title=&release_number=&file_number=&year=All&v=1700757750673","time":1700757750716,"symbols":[],"en":"Testing New 'Scrapers' Source ","_id":"1700757750716TNSS","suggestions":[]}`
+
+setTimeout(() => {processMessage(rawT)}, 5000);
+setTimeout(() => {processMessage(rawT)}, 5050)  
+*/
 
 
 
@@ -429,7 +435,7 @@ async function setInfoObj() {
   
 
 // SEND NOTIFICATION FOR EVERYTHING HAPPEN
-async function sendNotification(user, token, message, priority = 0, title = "ETF RESPONSE!!") {
+async function sendNotification(user, token, message, priority = 0, title = "(Scrapers) ETF RESPONSE!!") {
     const url = 'https://api.pushover.net/1/messages.json';
   
     const params = {
