@@ -18,7 +18,7 @@ const pOUser = process.env.PUSH_USER_ID;
 const pOToken = process.env.PUSH_TOKEN;
 
 const symbol = 'BTCUSDT';
-const size = 700000;
+const size = 800000;
 const fallbackPrice = 43000;
 let myOpenPositions = {};
 let priceObj = {};
@@ -58,10 +58,10 @@ async function reciveNews() {
 
   console.log('Connecting to WebSocket...');
   isConnected = true;
-  ws = new WebSocket('wss://news.treeofalpha.com/ws');
+  ws = new WebSocket('ws://tokyo.treeofalpha.com:5124');
 
   ws.on('open', () => {
-    console.log('Connection with TreeNews opened');
+    console.log('Connection with TreeNewsTokyo opened');
     ws.send('login 842752f3f9b8271110aa50829407762f536b8a34e43661db7f3e3ff4cb8ca772');
     reconnectionAttempts = 0;
   });
@@ -95,69 +95,86 @@ function attemptReconnect() {
 }
 
 
+
+
 async function processMessage(data) {
   try {
     const message = JSON.parse(data);
   
-    if (message.source === 'Scrapers') {
+    if (message.source === 'SEC_ETF_SRO') {
       let textToInterpret = message.title;
-      let sender = message.source; 
+      let sender = 'tokyoScraper';
+      let latestPrice = priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price > 0 ? priceObj['BTCUSDT'].price : fallbackPrice;
+      let notificationMessage;
 
-      if (message.title.startsWith("ETF: Possible Bitcoin ETF Approval:")) {
-        if (appOrderTriggered) {
-          console.log(sender + ': ' + textToInterpret);
-          console.log("Order already triggered");
-          return;
-        }
-        appOrderTriggered = true;
-        const latestPrice = priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price > 0 ? priceObj['BTCUSDT'].price : fallbackPrice;
+      switch (message.analysis) {
+        case 'bitcoin_approval':
+          if (appOrderTriggered) {
+            console.log(sender + ': ' + textToInterpret);
+            console.log("Order already triggered");
+            return;
+          }
+          appOrderTriggered = true;
+  
+          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount > 200000) { 
+            console.log(sender + ': ' + textToInterpret);
+            console.log("Already have a large position in BTCUSDT, not creating a new order.");
+            return;
+          } else {
+            const quantity = size / latestPrice; 
+            await createOrder("BUY", symbol, quantity);
+            console.log(sender + ': ' + textToInterpret);
+            notificationMessage = `BTC SPOT ETF has been approved and an order created for ${quantity} BTC!`;
+            console.log(symbol, quantity, latestPrice);
+            sendNotification(pOUser, pOToken, notificationMessage, 1);
+            console.log(notificationMessage);
+          }
+          break;
 
-        if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount > 200000) { 
-          console.log(sender + ': ' + textToInterpret);
-          console.log("Already have a large position in BTCUSDT, not creating a new order.");
-          return;
-        } else {
-          const quantity = size / latestPrice; 
-          await createOrder("BUY", symbol, quantity);
-          console.log(sender + ': ' + textToInterpret);
-          const message = `BTC SPOT ETF has been approved and an order created for ${quantity} BTC!`;
-          console.log(symbol, quantity, latestPrice);
-          sendNotification(pOUser, pOToken, message, 1);
-          console.log(message);
-        }
-      } else if (message.title.startsWith("ETF: Possible Bitcoin ETF Rejection:")) {
-        if (rejOrderTriggered) {
-          console.log(sender + ': ' + textToInterpret);
-          console.log("Order already triggered");
-          return;
-        }
-        rejOrderTriggered = true;
-        const latestPrice = priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price > 0 ? priceObj['BTCUSDT'].price : fallbackPrice;
+        case 'bitcoin_rejection':
+          if (rejOrderTriggered) {
+            console.log(sender + ': ' + textToInterpret);
+            console.log("Order already triggered");
+            return;
+          }
+          rejOrderTriggered = true;
+  
+          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount < 200000) {
+            console.log(sender + ': ' + textToInterpret);
+            console.log("Already have a large position in BTCUSDT, not creating a new order.");
+            return;
+          } else {
+            const quantity = size / latestPrice; 
+            await createOrder("SELL", symbol, quantity);
+            console.log(sender + ': ' + textToInterpret);
+            notificationMessage = `BTC SPOT ETF has been rejected and an order created for ${quantity} BTC!`;
+            console.log(symbol, quantity, latestPrice);
+            sendNotification(pOUser, pOToken, notificationMessage, 1);
+            console.log(notificationMessage);
+          }
+          break;
 
-        if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount < 200000) {
+        case 'bitcoin_delay':
           console.log(sender + ': ' + textToInterpret);
-          console.log("Already have a large position in BTCUSDT, not creating a new order.");
+          notificationMessage = "BTC SPOT ETF has been delayed";
+          sendNotification(pOUser, pOToken, notificationMessage);
+          console.log(notificationMessage);
+          break;
+
+        case 'bitcoin_unknown':
+          console.log(sender + ': ' + textToInterpret);
+          notificationMessage = "BTC SPOT ETF has received some unknown news";
+          sendNotification(pOUser, pOToken, notificationMessage);
+          console.log(notificationMessage);
+          break;
+
+        default:
+          console.log(sender + ': ' + textToInterpret);
+          console.log("Unrecognized analysis type.");
           return;
-        } else {
-          const quantity = size / latestPrice; 
-          await createOrder("SELL", symbol, quantity);
-          console.log(sender + ': ' + textToInterpret);
-          const message = `BTC SPOT ETF has been rejected and an order created for ${quantity} BTC!`;
-          console.log(symbol, quantity, latestPrice);
-          sendNotification(pOUser, pOToken, message, 1);
-          console.log(message);
-        }
-      } else if (message.title.startsWith("ETF: Possible Bitcoin ETF Delay:")) {
-        console.log(sender + ': ' + textToInterpret);
-        const message = "BTC SPOT ETF has been delayed";
-        sendNotification(pOUser, pOToken, message);
-        console.log(message);
-      } else {
-        console.log(sender + ': ' + textToInterpret);
-        return;
       }
     } else {
-      //console.log('message ignored.'); 
+      console.log('Message from unrecognized source ignored.'); 
       return; 
     }
   } catch (error) {
@@ -165,13 +182,6 @@ async function processMessage(data) {
   }
 }
 
-
-/*
-const rawT = `{"title":"ETF: Possible Bitcoin ETF Delay: sfjkgrjkgbnrjbg","source":"Scrapers","url":"https://www.sec.gov/rules/sro/national-securities-exchanges?aId=&sro_organization=All&title=&release_number=&file_number=&year=All&v=1700757750673","time":1700757750716,"symbols":[],"en":"Testing New 'Scrapers' Source ","_id":"1700757750716TNSS","suggestions":[]}`
-
-setTimeout(() => {processMessage(rawT)}, 5000);
-setTimeout(() => {processMessage(rawT)}, 5050)  
-*/
 
 
 
