@@ -18,8 +18,8 @@ const pOUser = process.env.PUSH_USER_ID;
 const pOToken = process.env.PUSH_TOKEN;
 
 const symbol = 'BTCUSDT';
-const size = 800000;
-const fallbackPrice = 43000;
+const size = 1000000;
+const fallbackPrice = 45000;
 let myOpenPositions = {};
 let priceObj = {};
 let infoObj = {};
@@ -116,7 +116,7 @@ async function processMessage(data) {
           }
           appOrderTriggered = true;
   
-          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount > 200000) { 
+          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount > 300000) { 
             console.log(sender + ': ' + textToInterpret);
             console.log("Already have a large position in BTCUSDT, not creating a new order.");
             return;
@@ -139,7 +139,7 @@ async function processMessage(data) {
           }
           rejOrderTriggered = true;
   
-          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount < 200000) {
+          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount < 300000) {
             console.log(sender + ': ' + textToInterpret);
             console.log("Already have a large position in BTCUSDT, not creating a new order.");
             return;
