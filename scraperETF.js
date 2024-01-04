@@ -31,7 +31,7 @@ let ws = null;
 let socket;
 
 
-
+keepBinanceFutAlive();
 setPriceObj();
 setInfoObj()
 setInterval(setInfoObj, 24 * 60 * 60 * 1000);
@@ -46,7 +46,16 @@ reciveNews();
 
 
 
-
+//keep sending ping
+function keepBinanceFutAlive() {
+  setInterval(() => {
+    try {
+      axios.get(`https://fapi.binance.com/fapi/v1/ping`);
+    } catch (e) {
+      console.log('Error sending ping request:', e);
+    }
+  }, 1000*20);
+}
 
 
 //RECIVE MESSAGE FROM THE SOCKET
