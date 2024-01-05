@@ -18,7 +18,7 @@ const pOUser = process.env.PUSH_USER_ID;
 const pOToken = process.env.PUSH_TOKEN;
 
 const symbol = 'BTCUSDT';
-const size = 1000000;
+const size = 600000;
 const fallbackPrice = 45000;
 let myOpenPositions = {};
 let priceObj = {};
