@@ -25,6 +25,7 @@ let priceObj = {};
 let infoObj = {};
 let appOrderTriggered = false; 
 let rejOrderTriggered = false;
+let delOrderTriggered = false;
 let reconnectionAttempts = 0;
 let isConnected = false;
 let ws = null;
@@ -116,23 +117,8 @@ async function processMessage(data) {
       let latestPrice;
       let notificationMessage;
 
-      if (priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price.length > 5) {
-        latestPrice = priceObj['BTCUSDT'].price[0];
-        const price5SecAgo = priceObj['BTCUSDT'].price[5]; 
-        const priceChangeRatio = Math.abs((latestPrice - price5SecAgo) / price5SecAgo);
-
-        if (priceChangeRatio < 0.035) { 
-          size *= 1;
-        } else if (priceChangeRatio < 0.07) {
-          size *= 0.5;
-        } else if (priceChangeRatio < 0.2) {
-          size *= 0.01;
-        }
-      } else {
-        latestPrice = fallbackPrice; 
-      }
-
       switch (message.analysis) {
+
         case 'bitcoin_approval':
           if (appOrderTriggered) {
             console.log(sender + ': ' + textToInterpret);
@@ -140,6 +126,23 @@ async function processMessage(data) {
             return;
           }
           appOrderTriggered = true;
+
+          if (priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price.length > 5) {
+            latestPrice = priceObj['BTCUSDT'].price[0];
+            const price5SecAgo = priceObj['BTCUSDT'].price[5]; 
+            const priceChangeRatio = Math.abs((latestPrice - price5SecAgo) / price5SecAgo);
+    
+            if (priceChangeRatio < 0.02) { 
+              size *= 0.6;
+            } else if (priceChangeRatio < 0.04) {
+              size *= 0.25;
+            } else if (priceChangeRatio < 0.1) {
+              size *= 0.01;
+            }
+          } else {
+            latestPrice = fallbackPrice;
+            size *= 0.4;
+          }
   
           if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount > 200000) { 
             console.log(sender + ': ' + textToInterpret);
@@ -163,6 +166,23 @@ async function processMessage(data) {
             return;
           }
           rejOrderTriggered = true;
+
+          if (priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price.length > 5) {
+            latestPrice = priceObj['BTCUSDT'].price[0];
+            const price5SecAgo = priceObj['BTCUSDT'].price[5]; 
+            const priceChangeRatio = Math.abs((latestPrice - price5SecAgo) / price5SecAgo);
+    
+            if (priceChangeRatio < 0.03) { 
+              size *= 1.2;
+            } else if (priceChangeRatio < 0.065) {
+              size *= 0.8;
+            } else if (priceChangeRatio < 0.2) {
+              size *= 0.01;
+            }
+          } else {
+            latestPrice = fallbackPrice;
+            size *= 0.4; 
+          }
   
           if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount < (-200000)) {
             console.log(sender + ': ' + textToInterpret);
@@ -180,10 +200,43 @@ async function processMessage(data) {
           break;
 
         case 'bitcoin_delay':
-          console.log(sender + ': ' + textToInterpret);
-          notificationMessage = "BTC SPOT ETF has been delayed";
-          sendNotification(pOUser, pOToken, notificationMessage);
-          console.log(notificationMessage);
+          if (delOrderTriggered) {
+            console.log(sender + ': ' + textToInterpret);
+            console.log("Order already triggered");
+            return;
+          }
+          delOrderTriggered = true;
+
+          if (priceObj.hasOwnProperty('BTCUSDT') && priceObj['BTCUSDT'].price.length > 5) {
+            latestPrice = priceObj['BTCUSDT'].price[0];
+            const price5SecAgo = priceObj['BTCUSDT'].price[5]; 
+            const priceChangeRatio = Math.abs((latestPrice - price5SecAgo) / price5SecAgo);
+    
+            if (priceChangeRatio < 0.03) { 
+              size *= 0.5;
+            } else if (priceChangeRatio < 0.06) {
+              size *= 0.2;
+            } else if (priceChangeRatio < 0.2) {
+              size *= 0.01;
+            }
+          } else {
+            latestPrice = fallbackPrice;
+            size *= 0.4;
+          }
+  
+          if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount < (-200000)) {
+            console.log(sender + ': ' + textToInterpret);
+            console.log("Already have a large position in BTCUSDT, not creating a new order.");
+            return;
+          } else {
+            const quantity = size / latestPrice; 
+            await createOrder("SELL", symbol, quantity);
+            console.log(sender + ': ' + textToInterpret);
+            notificationMessage = `BTC SPOT ETF has been delayed and an order created for ${quantity} BTC!`;
+            console.log(`Symbol: ${symbol}, Size: ${size}, Quantity: ${quantity}, Latest Price: ${latestPrice}`);
+            sendNotification(pOUser, pOToken, notificationMessage, 1);
+            console.log(notificationMessage);
+          }
           break;
 
         case 'bitcoin_unknown':
@@ -237,7 +290,7 @@ async function createOrder(paramsSide, symbol, quantity) {
     const order = await queryOrders(response.data.symbol, response.data.orderId);
 
     const timestampSL = Date.now();
-    const formattedStPrice = formatPrice( orderParams.side === 'BUY' ? (parseFloat(order.avgPrice * 0.985)) : (parseFloat(order.avgPrice * 1.015)), orderParams.symbol)
+    const formattedStPrice = formatPrice( orderParams.side === 'BUY' ? (parseFloat(order.avgPrice * 0.99)) : (parseFloat(order.avgPrice * 1.01)), orderParams.symbol)
     const stopMarketOrderParams = {
       symbol: orderParams.symbol,
       type: 'STOP_MARKET',
