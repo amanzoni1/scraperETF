@@ -133,15 +133,15 @@ async function processMessage(data) {
             const priceChangeRatio = Math.abs((latestPrice - price5SecAgo) / price5SecAgo);
     
             if (priceChangeRatio < 0.02) { 
-              size *= 0.6;
+              size *= 0.4;
             } else if (priceChangeRatio < 0.04) {
-              size *= 0.25;
+              size *= 0.05;
             } else if (priceChangeRatio < 0.1) {
               size *= 0.01;
             }
           } else {
             latestPrice = fallbackPrice;
-            size *= 0.4;
+            size *= 0.25;
           }
   
           if (myOpenPositions.hasOwnProperty('BTCUSDT') && myOpenPositions['BTCUSDT'].amount > 200000) { 
